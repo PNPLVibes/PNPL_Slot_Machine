@@ -143,10 +143,22 @@
       z-index: 1000;
       user-select: none;
     }
-            /* Force reset button to new line with extra top margin */
-      #reset {
-        flex-basis: 100%;
-        margin-top: 15px;
+    /* Reset icon style: fixed in top right below mute button */
+    #reset-icon {
+      position: fixed;
+      top: 50px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1000;
+      user-select: none;
+    }
+    /* Mobile-specific styling */
+    @media (max-width: 600px) {
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   </style>
@@ -154,6 +166,8 @@
 <body>
   <!-- Mute button in top right -->
   <div id="mute-button">🔊</div>
+  <!-- Reset icon in top right below mute button -->
+  <div id="reset-icon">🔄</div>
   <h1>PNPL Slot Machine</h1>
   <div id="slot-machine">
     <div class="reel-container">
@@ -171,7 +185,6 @@
     <span>Bet: $<span id="bet-amount">1</span></span>
     <button id="bet-increase">+</button>
     <button id="spin">Spin</button>
-    <button id="reset">Reset Game</button>
   </div>
   <div id="info">
     Balance: $<span id="balance">100</span> | Last Win: $<span id="last-win">0</span>
@@ -273,7 +286,6 @@
     const spinButton = document.getElementById('spin');
     const betIncrease = document.getElementById('bet-increase');
     const betDecrease = document.getElementById('bet-decrease');
-    const resetButton = document.getElementById('reset');
     const betAmountSpan = document.getElementById('bet-amount');
     const balanceSpan = document.getElementById('balance');
     const lastWinSpan = document.getElementById('last-win');
@@ -303,7 +315,8 @@
       }
     });
 
-    resetButton.addEventListener('click', () => {
+    // Reset function to reset the game
+    function resetGame() {
       if (!isSpinning) {
         balance = 100;
         bet = 1;
@@ -311,7 +324,6 @@
         messageDiv.textContent = 'Game has been reset!';
         updateDisplay();
         clearMessage();
-
         // Reset each reel using generateReel to recreate the original random reel (with Coin as the first element).
         reelsData.forEach((reel, index) => {
           reelsData[index] = generateReel();
@@ -325,7 +337,10 @@
           reelDivs[index].style.transform = 'translateY(0)';
         });
       }
-    });
+    }
+
+    // Add event listener to the reset icon
+    document.getElementById("reset-icon").addEventListener("click", resetGame);
 
     function spin() {
       if (isSpinning || balance < bet) {
@@ -375,7 +390,6 @@
         balance += lastWin;
         messageDiv.textContent = `JACKPOT! You win $${lastWin}! (${middleSymbols[0]} x3)`;
         playSound(880, 300);
-        
         reelDivs.forEach((reel, index) => {
           const winningSymbol = reel.children[stopIndices[index]];
           winningSymbol.style.animation = 'winning-pulse 0.5s 3';
