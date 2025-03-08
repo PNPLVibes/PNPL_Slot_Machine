@@ -133,9 +133,34 @@
       50% { transform: scale(1.2); filter: brightness(1.5) drop-shadow(0 0 10px gold); }
       100% { transform: scale(1); }
     }
+    /* Mute button style: fixed in top right */
+    #mute-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1000;
+      user-select: none;
+    }
+    /* Mobile-specific styling */
+    @media (max-width: 600px) {
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      /* Force reset button to new line with extra top margin */
+      #reset {
+        flex-basis: 100%;
+        margin-top: 15px;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Mute button in top right -->
+  <div id="mute-button">🔊</div>
   <h1>PNPL Slot Machine</h1>
   <div id="slot-machine">
     <div class="reel-container">
@@ -205,8 +230,11 @@
     };
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Global mute flag
+    let isMuted = false;
 
     function playSound(frequency, duration) {
+      if(isMuted) return;
       const oscillator = audioCtx.createOscillator();
       oscillator.type = 'sine';
       oscillator.frequency.value = frequency;
@@ -367,6 +395,12 @@
     }
 
     spinButton.addEventListener('click', spin);
+
+    // Mute button event listener to toggle sound.
+    document.getElementById("mute-button").addEventListener("click", () => {
+      isMuted = !isMuted;
+      document.getElementById("mute-button").textContent = isMuted ? "🔇" : "🔊";
+    });
   </script>
 </body>
 </html>
