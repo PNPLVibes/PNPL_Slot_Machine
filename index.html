@@ -1,129 +1,413 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>The PNPL Game</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PNPL Slot Machine</title>
   <style>
     body {
-      background: #111;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(to bottom, #1a1a2e, #16213e);
+      margin: 0;
+      padding: 20px;
       color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
     }
-
     h1 {
-      color: hotpink;
+      margin-bottom: 20px;
+      color: #ffffff;
+      text-shadow: 0 0 10px #000000;
     }
-
-    .card {
-      position: relative;
-      background: #222;
-      border: 2px solid hotpink;
+    #slot-machine {
+      display: flex;
+      border: 5px solid #ffffff;
+      background-color: #0f3460;
+      padding: 10px;
       border-radius: 15px;
-      display: inline-block;
-      padding: 30px;
-      margin-top: 20px;
-      width: 300px;
-      min-height: 150px;
-      font-size: 1.2rem;
-      box-shadow: 0 0 20px hotpink;
-      transition: transform 0.3s;
+      box-shadow: 0 0 20px #000000;
+      perspective: 1200px;
+    }
+    .reel-container {
+      width: 120px;
+      height: 120px;
+      overflow: hidden;
+      margin: 0 5px;
+      background-color: #37b8ed;
+      border: 2px solid #ffffff;
+      border-radius: 10px;
+      transform: rotateY(10deg);
+      transition: transform 0.3s ease-in-out;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+    }
+    .reel-container:hover {
+      transform: rotateY(0deg);
+    }
+    .reel {
+      width: 100%;
+      transition: transform 0.1s ease-out;
+      transform-style: preserve-3d;
+    }
+    .symbol {
+      width: 100%;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-sizing: border-box;
+      transform: translateZ(10px);
+    }
+    .symbol img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      object-position: center;
+      filter: drop-shadow(0 0 5px #000000);
+    }
+    #controls {
+      margin-top: 30px;
+      text-align: center;
+    }
+    #controls button {
+      padding: 10px 25px;
+      font-size: 16px;
+      margin: 0 8px;
+      cursor: pointer;
+      background-color: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 25px;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    #controls button:hover:not(:disabled) {
+      background-color: #800000;
+      transform: scale(1.05);
+      box-shadow: 0 0 15px #ffffff;
+    }
+    #controls button:disabled {
+      background-color: #4a4a4a;
+      cursor: not-allowed;
+    }
+    #info {
+      margin-top: 25px;
+      font-size: 18px;
+      text-align: center;
+    }
+    #message {
+      margin-top: 15px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #37b8ed;
+      min-height: 30px;
+      text-shadow: 0 0 10px #000000;
+    }
+    #paytable {
+      margin-top: 30px;
+      width: 400px;
+      border-collapse: collapse;
+      background-color: #0f3460;
+      border: 2px solid #e94560;
+      border-radius: 10px;
       overflow: hidden;
     }
-
-    /* Watermark centered behind text inside card */
-    .card::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 150px;
-      height: 150px;
-      background: url('https://raw.githubusercontent.com/PNPLVibes/The_PNPL_Game/main/pnpl-bg.png') center center no-repeat;
-      background-size: contain;
-      opacity: 0.08;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 0;
+    #paytable th, #paytable td {
+      border: 1px solid #37b8ed;
+      padding: 12px;
+      text-align: center;
     }
-
-    .card * {
-      position: relative;
-      z-index: 1;
+    #paytable th {
+      background-color: #37b8ed;
+      color: white;
+      font-weight: bold;
     }
-
-    .card:hover {
-      transform: scale(1.05);
+    #paytable td {
+      background-color: rgba(15, 52, 96, 0.8);
     }
-
-    button {
-      margin-top: 20px;
-      padding: 15px 25px;
-      background: hotpink;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1rem;
+    @keyframes winning-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); filter: brightness(1.5) drop-shadow(0 0 10px gold); }
+      100% { transform: scale(1); }
+    }
+    /* Mute button style: fixed in top right */
+    #mute-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
       cursor: pointer;
-      transition: background 0.3s;
+      z-index: 1000;
+      user-select: none;
     }
-    button:hover {
-      background: deeppink;
+    /* Reset icon style: fixed in top right below mute button */
+    #reset-icon {
+      position: fixed;
+      top: 50px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1000;
+      user-select: none;
+    }
+    /* Mobile-specific styling */
+    @media (max-width: 600px) {
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>The PNPL Game</h1>
-  <div class="card" id="card">Click "Draw a Card" to start!</div>
-  <br>
-  <button id="drawButton">Draw a Card</button>
+  <!-- Mute button in top right -->
+  <div id="mute-button">🔊</div>
+  <!-- Reset icon in top right below mute button -->
+  <div id="reset-icon">🔄</div>
+  <h1>PNPL Slot Machine</h1>
+  <div id="slot-machine">
+    <div class="reel-container">
+      <div class="reel" id="reel1"></div>
+    </div>
+    <div class="reel-container">
+      <div class="reel" id="reel2"></div>
+    </div>
+    <div class="reel-container">
+      <div class="reel" id="reel3"></div>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="bet-decrease">-</button>
+    <span>Bet: $<span id="bet-amount">1</span></span>
+    <button id="bet-increase">+</button>
+    <button id="spin">Spin</button>
+  </div>
+  <div id="info">
+    Balance: $<span id="balance">100</span> | Last Win: $<span id="last-win">0</span>
+  </div>
+  <div id="message"></div>
+  <table id="paytable">
+    <tr>
+      <th>Combination</th>
+      <th>Payout</th>
+    </tr>
+    <tr>
+      <td>Three Coins</td>
+      <td>50x Bet</td>
+    </tr>
+    <tr>
+      <td>Three Vibes</td>
+      <td>20x Bet</td>
+    </tr>
+    <tr>
+      <td>Three Hearts</td>
+      <td>10x Bet</td>
+    </tr>
+    <tr>
+      <td>Three Flamingos</td>
+      <td>5x Bet</td>
+    </tr>
+    <tr>
+      <td>Three Lips</td>
+      <td>5x Bet</td>
+    </tr>
+  </table>
 
   <script>
-    const cards = [
-      "Pick two people and all three of you stand. Rub them both, below the waist simultaneously, while kissing one of them.",
-      "While kissing somebody, take their hand and guide it to a place you want them to rub.",
-      "Have your partner pick someone to give you oral.",
-      "You and your partner pick someone, double team them using your lips, tongue, and hands.",
-      "Pick two people and have them passionately kiss each other.",
-      "Pick a guy or girl to give your partner oral while you kiss them.",
-      "Close your eyes and keep them closed while everyone takes a turn kissing you with tongue.",
-      "Pick a person, give them oral. Do this for 1 minute minimum.",
-      "Give your partner a slow, teasing kiss.",
-      "Take someones hand and place it on your partners genitals and help them rub it (above the underwear).",
-      "Rub two people's genitals at the same time (under their underwear).",
-      "Help this person remove one article of clothing.",
-      "Pick a person. Stimulate two parts of their body at the same time. Use you hand on one part and your mouth on another.",
-      "Pick a person, While kissing them, slip your hand in their underwear and caress erotically.",
-      "If you're a girl, you're going to suck you partner's penis, but you cant use you hands. pick another person to handle his penis and place it in you     mouth. If you're a guy, do this with your partner and someone else.",
-      "You're the director. Select your cast and have them perform a short porn scene.",
-      "Put a blindfold on and lie back while everyone takes a turn pleasuring you orally. Can you guess who's who?.",
-      "Make a human chain. Everyone needs to connect orally.",
-      "If you're a guy, lie down face up. Have one girl straddle your penis while another straddles your face.",
-      "Pick someone. Undress them completely and use your mouth on as many parts of their body as you can for 60 seconds.",
-      "Pick someone, take them out of the room, and and whatever you want for at least 5 mins before returning to the group.",
-      "Stand in the center. Everyone takes turns touching your genitals with their hands for 30 seconds.",
-      "Choose two people to swap partners with and perform oral on each other's partner for 3 minutes.",
-      "Pick someone and finger them (or hand job) for 60 seconds while kissing them.",
-      "Pick a person. Lick and suck their nipples for 1 full minute.",
-      "Pick someone to give you oral while another person kisses your neck and chest.",
-      "Pick someone to suck your fingers while you finger them in return.",
-      "Pick someone and taste each other below the waist for 2 minutes each.",
-      "Pick three people and pile up on top of each other, touching and kissing wherever you can.",
-      "Pick two people to have sex with each other in front of the group for 2 minutes.",
-      "Pick two people to give you oral at the same time."
-    ];
+    const symbolMap = {
+      'Coin': 'https://assets.zyrosite.com/YrD3QqD87EH4j868/pnpl-coin-1-AMql7eanXpTGgnve.png',
+      'Vibes': 'https://assets.zyrosite.com/YrD3QqD87EH4j868/vibes-pnpl-dWxBX7M4XzS5E5VL.png',
+      'Heart': 'https://assets.zyrosite.com/YrD3QqD87EH4j868/heart-1-YBge305q7bFMg8R6.png',
+      'Flamingo': 'https://assets.zyrosite.com/YrD3QqD87EH4j868/flamingo-AQEDNOD5apUgvl5k.png',
+      'Lips': 'https://assets.zyrosite.com/YrD3QqD87EH4j868/lips-1-dWxBX7ej2oc17MjN.png'
+    };
 
-    const cardElement = document.getElementById("card");
-    const drawButton = document.getElementById("drawButton");
+    const symbols = Object.keys(symbolMap);
+    const payouts = {
+      'Coin': 50,
+      'Vibes': 20,
+      'Heart': 10,
+      'Flamingo': 5,
+      'Lips': 5
+    };
 
-    function drawCard() {
-      const randomIndex = Math.floor(Math.random() * cards.length);
-      cardElement.textContent = cards[randomIndex];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Global mute flag
+    let isMuted = false;
+
+    function playSound(frequency, duration) {
+      if(isMuted) return;
+      const oscillator = audioCtx.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), duration);
     }
 
-    drawButton.addEventListener('click', drawCard);
+    function generateReel(length = 20) {
+      return Array.from({ length }, (_, i) => 
+        i === 0 ? 'Coin' : symbols[Math.floor(Math.random() * symbols.length)]
+      );
+    }
+
+    let reel1 = generateReel();
+    let reel2 = generateReel();
+    let reel3 = generateReel();
+    const reelsData = [reel1, reel2, reel3];
+
+    const reelDivs = document.querySelectorAll('.reel');
+    reelDivs.forEach((reelDiv, index) => {
+      reelsData[index].forEach(symbol => {
+        const div = document.createElement('div');
+        div.className = 'symbol';
+        div.innerHTML = `<img src="${symbolMap[symbol]}" alt="${symbol}">`;
+        reelDiv.appendChild(div);
+      });
+      reelDiv.style.transform = 'translateY(0)';
+    });
+
+    let isSpinning = false;
+    let stopIndices = [0, 0, 0];
+    let startTimes = [0, 0, 0];
+    const spinDurations = [2000, 3000, 4000];
+    const symbolHeight = 120;
+    const reelLength = 20;
+    const speed = 1;
+    const totalHeight = reelLength * symbolHeight;
+    let balance = 100;
+    let bet = 1;
+    let lastWin = 0;
+
+    const spinButton = document.getElementById('spin');
+    const betIncrease = document.getElementById('bet-increase');
+    const betDecrease = document.getElementById('bet-decrease');
+    const betAmountSpan = document.getElementById('bet-amount');
+    const balanceSpan = document.getElementById('balance');
+    const lastWinSpan = document.getElementById('last-win');
+    const messageDiv = document.getElementById('message');
+
+    function updateDisplay() {
+      balanceSpan.textContent = balance;
+      lastWinSpan.textContent = lastWin;
+      betAmountSpan.textContent = bet;
+    }
+
+    function clearMessage() {
+      setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+    }
+
+    betIncrease.addEventListener('click', () => {
+      if (!isSpinning && bet < 10) {
+        bet++;
+        updateDisplay();
+      }
+    });
+
+    betDecrease.addEventListener('click', () => {
+      if (!isSpinning && bet > 1) {
+        bet--;
+        updateDisplay();
+      }
+    });
+
+    // Reset function to reset the game
+    function resetGame() {
+      if (!isSpinning) {
+        balance = 100;
+        bet = 1;
+        lastWin = 0;
+        messageDiv.textContent = 'Game has been reset!';
+        updateDisplay();
+        clearMessage();
+        // Reset each reel using generateReel to recreate the original random reel (with Coin as the first element).
+        reelsData.forEach((reel, index) => {
+          reelsData[index] = generateReel();
+          reelDivs[index].innerHTML = '';
+          reelsData[index].forEach(symbol => {
+            const div = document.createElement('div');
+            div.className = 'symbol';
+            div.innerHTML = `<img src="${symbolMap[symbol]}" alt="${symbol}">`;
+            reelDivs[index].appendChild(div);
+          });
+          reelDivs[index].style.transform = 'translateY(0)';
+        });
+      }
+    }
+
+    // Add event listener to the reset icon
+    document.getElementById("reset-icon").addEventListener("click", resetGame);
+
+    function spin() {
+      if (isSpinning || balance < bet) {
+        if (balance < bet) {
+          messageDiv.textContent = 'Insufficient balance!';
+          clearMessage();
+        }
+        return;
+      }
+      isSpinning = true;
+      spinButton.disabled = true;
+      balance -= bet;
+      lastWin = 0;
+      updateDisplay();
+      stopIndices = reelsData.map(() => Math.floor(Math.random() * reelLength));
+      startTimes = reelsData.map(() => performance.now());
+      playSound(440, 500);
+      requestAnimationFrame(animate);
+    }
+
+    function animate(time) {
+      reelDivs.forEach((reelDiv, index) => {
+        const elapsed = time - startTimes[index];
+        if (elapsed < spinDurations[index]) {
+          const position = (elapsed * speed) % totalHeight;
+          reelDiv.style.transform = `translateY(${-position}px)`;
+        } else {
+          const finalPosition = stopIndices[index] * symbolHeight;
+          reelDiv.style.transform = `translateY(${-finalPosition}px)`;
+          if (index === 2 && isSpinning) {
+            isSpinning = false;
+            spinButton.disabled = false;
+            checkWin();
+          }
+        }
+      });
+      if (isSpinning) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    function checkWin() {
+      const middleSymbols = reelsData.map((reel, index) => reel[stopIndices[index]]);
+      if (middleSymbols.every(symbol => symbol === middleSymbols[0])) {
+        const winMultiplier = payouts[middleSymbols[0]];
+        lastWin = bet * winMultiplier;
+        balance += lastWin;
+        messageDiv.textContent = `JACKPOT! You win $${lastWin}! (${middleSymbols[0]} x3)`;
+        playSound(880, 300);
+        reelDivs.forEach((reel, index) => {
+          const winningSymbol = reel.children[stopIndices[index]];
+          winningSymbol.style.animation = 'winning-pulse 0.5s 3';
+        });
+      } else {
+        messageDiv.textContent = 'Better luck next time!';
+      }
+      updateDisplay();
+      clearMessage();
+    }
+
+    spinButton.addEventListener('click', spin);
+
+    // Mute button event listener to toggle sound.
+    document.getElementById("mute-button").addEventListener("click", () => {
+      isMuted = !isMuted;
+      document.getElementById("mute-button").textContent = isMuted ? "🔇" : "🔊";
+    });
   </script>
 </body>
 </html>
